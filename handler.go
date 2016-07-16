@@ -4,7 +4,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"net/http/httputil"
 )
@@ -12,7 +11,9 @@ import (
 // Handler proxy handler filtering requests
 type Handler struct {
 	reverseProxy httputil.ReverseProxy
-	filter       FilterTCPAddrFn
+	// used becuse ReverseProxy.Transport is a http.RoundTripper interface
+	// we could cast but feels a bit ugly
+	transport *http.Transport
 }
 
 func copyAndClose(dst io.WriteCloser, src io.Reader) {
@@ -29,7 +30,7 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	// connect, probably TLS, make TCP connection and tunnel traffic
 
-	conn, err := DialTCP(r.Host, h.filter)
+	conn, err := h.transport.Dial("tcp", r.Host)
 	if err != nil {
 		rw.WriteHeader(http.StatusBadGateway)
 		return
@@ -52,21 +53,18 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	go copyAndClose(hijackConn, conn)
 }
 
-// NewHandler new proxy handler using filter function to filter requests
-func NewHandler(filter FilterTCPAddrFn) http.Handler {
+// NewHandler new proxy handler using transport to make actual requests
+// use a transport with a filter dialer to filter proxy requests
+func NewHandler(transport *http.Transport) http.Handler {
 	return &Handler{
 		reverseProxy: httputil.ReverseProxy{
-			ErrorLog: log.New(ioutil.Discard, "", 0), // prints to stderr if nil
-			Director: func(r *http.Request) {},
-			Transport: &http.Transport{
-				Dial: func(network, addr string) (net.Conn, error) {
-					return DialTCP(addr, filter)
-				},
-			},
+			ErrorLog:  log.New(ioutil.Discard, "", 0), // prints to stderr if nil
+			Director:  func(r *http.Request) {},
+			Transport: transport,
 		},
-		filter: filter,
+		transport: transport,
 	}
 }
 
 // DefaultHandler proxy that filters private addresses
-var DefaultHandler = NewHandler(FilterPrivate)
+var DefaultHandler = NewHandler(DefaultTransport)

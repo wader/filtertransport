@@ -1,6 +1,7 @@
 package filtertransport
 
 import (
+	"errors"
 	"net"
 	"testing"
 )
@@ -46,5 +47,29 @@ func TestFilterPrivate(t *testing.T) {
 		if err := FilterPrivate(net.TCPAddr{IP: c.ip}); (err != nil) != c.fileterd {
 			t.Errorf("%v should be %t", c.ip, c.fileterd)
 		}
+	}
+}
+
+func TestFilterDial(t *testing.T) {
+	FilterDial(
+		"tcp", "1.2.3.4:1234",
+		func(addr net.TCPAddr) error { return errors.New("") },
+		func(network string, address string) (net.Conn, error) {
+			t.Errorf("dail should not be called on filter error")
+			return nil, nil
+		},
+	)
+
+	called := false
+	FilterDial(
+		"tcp", "1.2.3.4:1234",
+		func(addr net.TCPAddr) error { return nil },
+		func(network string, address string) (net.Conn, error) {
+			called = true
+			return nil, nil
+		},
+	)
+	if !called {
+		t.Errorf("dail should be called on no filter error")
 	}
 }

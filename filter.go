@@ -6,14 +6,15 @@ package filtertransport
 import (
 	"fmt"
 	"net"
-	"os"
-	"syscall"
 )
 
-// FilterTCPAddrFn is function deciding if to filter
+// DialFn http.Transport dial function
+type DialFn func(network string, address string) (net.Conn, error)
+
+// FilterTCPAddrFn function deciding if to filter
 type FilterTCPAddrFn func(addr net.TCPAddr) error
 
-// FilterError request filtered error
+// FilterError TCP address filtered error
 type FilterError struct {
 	net.TCPAddr
 }
@@ -42,8 +43,12 @@ var PrivateNetworks = []net.IPNet{
 	MustParseCIDR("fc00::/7"),
 }
 
-// DialTCP like net.DialTCP but with filtering function
-func DialTCP(address string, filter FilterTCPAddrFn) (net.Conn, error) {
+// FilterDial http.Transport dial with filtering function
+func FilterDial(network string, address string, filter FilterTCPAddrFn, dial DialFn) (net.Conn, error) {
+	if network != "tcp" && network != "tcp4" && network != "tcp6" {
+		return nil, fmt.Errorf("unsupported network %s", network)
+	}
+
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return nil, err
@@ -53,35 +58,8 @@ func DialTCP(address string, filter FilterTCPAddrFn) (net.Conn, error) {
 		return nil, err
 	}
 
-	var af int
-	var sa syscall.Sockaddr
-
-	if ip4 := tcpAddr.IP.To4(); ip4 != nil {
-		af = syscall.AF_INET
-		sa4 := &syscall.SockaddrInet4{Port: tcpAddr.Port}
-		copy(sa4.Addr[:], ip4)
-		sa = sa4
-	} else if ip16 := tcpAddr.IP.To16(); ip16 != nil {
-		af = syscall.AF_INET6
-		sa6 := &syscall.SockaddrInet6{Port: tcpAddr.Port}
-		copy(sa6.Addr[:], ip16)
-		sa = sa6
-	} else {
-		return nil, fmt.Errorf("unknown ip len %d (%s)", len(tcpAddr.IP), address)
-	}
-
-	fd, err := syscall.Socket(af, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := syscall.Connect(fd, sa); err != nil {
-		syscall.Close(fd)
-		return nil, err
-	}
-
-	file := os.NewFile(uintptr(fd), "")
-	return net.FileConn(file)
+	// pass along resolved address to prevent DNS rebind
+	return dial(network, tcpAddr.String())
 }
 
 func findIPNet(ipnets []net.IPNet, ip net.IP) bool {
