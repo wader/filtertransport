@@ -66,5 +66,5 @@ func NewHandler(transport *http.Transport) http.Handler {
 	}
 }
 
-// DefaultHandler proxy that filters private addresses
+// DefaultHandler proxy that usee default filter transport for requests
 var DefaultHandler = NewHandler(DefaultTransport)

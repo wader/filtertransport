@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// DefaultTransport http.DefaultTransport that filters private addresses
+// DefaultTransport http.DefaultTransport that filters using DefaultFilter
 var DefaultTransport = &http.Transport{
 	// does not include ProxyFromEnvironment, makes no sense for filter
 	Dial: func(network, addr string) (net.Conn, error) {
