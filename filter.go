@@ -32,15 +32,20 @@ func MustParseCIDR(s string) net.IPNet {
 	}
 }
 
-// PrivateNetworks private net.IPNets
-var PrivateNetworks = []net.IPNet{
-	MustParseCIDR("169.254.0.0/16"),
-	MustParseCIDR("172.16.0.0/12"),
-	MustParseCIDR("192.168.0.0/16"),
-	MustParseCIDR("10.0.0.0/8"),
-	MustParseCIDR("127.0.0.0/8"),
-	MustParseCIDR("::1/128"),
-	MustParseCIDR("fc00::/7"),
+// DefaultFilteredNetworks net.IPNets that are loopback, private, link local, default unicast
+var DefaultFilteredNetworks = []net.IPNet{
+	MustParseCIDR("127.0.0.0/8"),    // loopback
+	MustParseCIDR("0.0.0.0/32"),     // default unicast
+	MustParseCIDR("169.254.0.0/16"), // link local
+	MustParseCIDR("172.16.0.0/12"),  // private
+	MustParseCIDR("192.168.0.0/16"), // private
+	MustParseCIDR("10.0.0.0/8"),     // private
+	MustParseCIDR("::1/128"),        // loopback
+	MustParseCIDR("::/128"),         // default unicast
+	MustParseCIDR("fc00::/7"),       // unique local addresses
+	// IPv4 compatibility network (overlaps ::/128)
+	// not really private but very rare
+	MustParseCIDR("::/96"),
 }
 
 // FilterDial http.Transport dial with filtering function
@@ -62,7 +67,8 @@ func FilterDial(network string, address string, filter FilterTCPAddrFn, dial Dia
 	return dial(network, tcpAddr.String())
 }
 
-func findIPNet(ipnets []net.IPNet, ip net.IP) bool {
+// FindIPNet true if any of the ipnets contains ip
+func FindIPNet(ipnets []net.IPNet, ip net.IP) bool {
 	for _, ipnet := range ipnets {
 		if ipnet.Contains(ip) {
 			return true
@@ -72,9 +78,9 @@ func findIPNet(ipnets []net.IPNet, ip net.IP) bool {
 	return false
 }
 
-// FilterPrivate filter function filtering PrivateNetworks
-func FilterPrivate(addr net.TCPAddr) error {
-	if findIPNet(PrivateNetworks, addr.IP) {
+// DefaultFilter filters DefaultFilteredNetworks
+func DefaultFilter(addr net.TCPAddr) error {
+	if FindIPNet(DefaultFilteredNetworks, addr.IP) {
 		return FilterError{addr}
 	}
 	return nil

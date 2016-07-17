@@ -6,11 +6,18 @@ import (
 	"testing"
 )
 
-func TestFilterPrivate(t *testing.T) {
+func TestDefaultFilter(t *testing.T) {
 	for _, c := range []struct {
 		ip       net.IP
 		fileterd bool
 	}{
+		{net.ParseIP("126.255.255.255"), false},
+		{net.ParseIP("127.0.0.1"), true},
+		{net.ParseIP("127.255.255.255"), true},
+		{net.ParseIP("128.0.0.1"), false},
+
+		{net.ParseIP("0.0.0.0"), true},
+
 		{net.ParseIP("169.253.255.255"), false},
 		{net.ParseIP("169.254.0.1"), true},
 		{net.ParseIP("169.254.255.255"), true},
@@ -31,20 +38,17 @@ func TestFilterPrivate(t *testing.T) {
 		{net.ParseIP("10.255.255.255"), true},
 		{net.ParseIP("11.0.0.1"), false},
 
-		{net.ParseIP("126.255.255.255"), false},
-		{net.ParseIP("127.0.0.1"), true},
-		{net.ParseIP("127.255.255.255"), true},
-		{net.ParseIP("128.0.0.1"), false},
-
 		{net.ParseIP("::1"), true},
-		{net.ParseIP("::2"), false},
+		{net.ParseIP("::2"), true}, // IPv4 compatibility, not allowed for now
+
+		{net.ParseIP("::"), true},
 
 		{net.ParseIP("fb00::1"), false},
 		{net.ParseIP("fc00::1"), true},
 		{net.ParseIP("fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), true},
 		{net.ParseIP("fe00::1"), false},
 	} {
-		if err := FilterPrivate(net.TCPAddr{IP: c.ip}); (err != nil) != c.fileterd {
+		if err := DefaultFilter(net.TCPAddr{IP: c.ip}); (err != nil) != c.fileterd {
 			t.Errorf("%v should be %t", c.ip, c.fileterd)
 		}
 	}

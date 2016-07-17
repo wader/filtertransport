@@ -10,7 +10,7 @@ import (
 var DefaultTransport = &http.Transport{
 	// does not include ProxyFromEnvironment, makes no sense for filter
 	Dial: func(network, addr string) (net.Conn, error) {
-		return FilterDial(network, addr, FilterPrivate, (&net.Dialer{
+		return FilterDial(network, addr, DefaultFilter, (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).Dial)
