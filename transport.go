@@ -13,8 +13,11 @@ var DefaultTransport = &http.Transport{
 		return FilterDial(network, addr, DefaultFilter, (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
+			DualStack: true,
 		}).Dial)
 	},
+	MaxIdleConns:          100,
+	IdleConnTimeout:       90 * time.Second,
 	TLSHandshakeTimeout:   10 * time.Second,
 	ExpectContinueTimeout: 1 * time.Second,
 }
