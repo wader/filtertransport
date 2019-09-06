@@ -1,4 +1,4 @@
-package filtertransport
+package proxy
 
 import (
 	"io"
@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+
+	"github.com/wader/filtertransport"
 )
 
 // Handler proxy handler filtering requests
@@ -67,4 +69,4 @@ func NewHandler(transport *http.Transport) http.Handler {
 }
 
 // DefaultHandler proxy that usee default filter transport for requests
-var DefaultHandler = NewHandler(DefaultTransport)
+var DefaultHandler = NewHandler(filtertransport.DefaultTransport)
