@@ -1,6 +1,4 @@
-/*
-Package filtertransport implements filtering http transport and proxy handler
-*/
+// Package filtertransport implements filtering http transport and proxy handler
 package filtertransport
 
 import (
