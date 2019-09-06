@@ -1,4 +1,5 @@
-// +build !go1.13
+// go 1.13 and later when ForceAttemptHTTP2 was added
+// +build go1.13
 
 package filtertransport
 
@@ -10,7 +11,7 @@ import (
 
 // DefaultTransport http.DefaultTransport that filters using DefaultFilter
 var DefaultTransport = &http.Transport{
-	// does not include ProxyFromEnvironment, makes no sense for filter
+	// does not include ProxyFromEnvironment  makes no sense for filter
 	Dial: func(network, addr string) (net.Conn, error) {
 		return FilterDial(network, addr, DefaultFilter, (&net.Dialer{
 			Timeout:   30 * time.Second,
@@ -18,6 +19,7 @@ var DefaultTransport = &http.Transport{
 			DualStack: true,
 		}).Dial)
 	},
+	ForceAttemptHTTP2:     true,
 	MaxIdleConns:          100,
 	IdleConnTimeout:       90 * time.Second,
 	TLSHandshakeTimeout:   10 * time.Second,
