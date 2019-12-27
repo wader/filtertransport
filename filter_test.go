@@ -1,6 +1,7 @@
 package filtertransport
 
 import (
+	"context"
 	"errors"
 	"net"
 	"testing"
@@ -56,9 +57,10 @@ func TestDefaultFilter(t *testing.T) {
 
 func TestFilterDial(t *testing.T) {
 	FilterDial(
+		context.Background(),
 		"tcp", "1.2.3.4:1234",
 		func(addr net.TCPAddr) error { return errors.New("") },
-		func(network string, address string) (net.Conn, error) {
+		func(ctx context.Context, network string, address string) (net.Conn, error) {
 			t.Errorf("dail should not be called on filter error")
 			return nil, nil
 		},
@@ -66,9 +68,10 @@ func TestFilterDial(t *testing.T) {
 
 	called := false
 	FilterDial(
+		context.Background(),
 		"tcp", "1.2.3.4:1234",
 		func(addr net.TCPAddr) error { return nil },
-		func(network string, address string) (net.Conn, error) {
+		func(ctx context.Context, network string, address string) (net.Conn, error) {
 			called = true
 			return nil, nil
 		},

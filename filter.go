@@ -2,12 +2,13 @@
 package filtertransport
 
 import (
+	"context"
 	"fmt"
 	"net"
 )
 
 // DialFn http.Transport dial function
-type DialFn func(network string, address string) (net.Conn, error)
+type DialFn func(ctx context.Context, network string, address string) (net.Conn, error)
 
 // FilterTCPAddrFn function deciding if to filter
 type FilterTCPAddrFn func(addr net.TCPAddr) error
@@ -47,7 +48,7 @@ var DefaultFilteredNetworks = []net.IPNet{
 }
 
 // FilterDial http.Transport dial with filtering function
-func FilterDial(network string, address string, filter FilterTCPAddrFn, dial DialFn) (net.Conn, error) {
+func FilterDial(ctx context.Context, network string, address string, filter FilterTCPAddrFn, dial DialFn) (net.Conn, error) {
 	if network != "tcp" && network != "tcp4" && network != "tcp6" {
 		return nil, fmt.Errorf("unsupported network %s", network)
 	}
@@ -62,7 +63,7 @@ func FilterDial(network string, address string, filter FilterTCPAddrFn, dial Dia
 	}
 
 	// pass along resolved address to prevent DNS rebind
-	return dial(network, tcpAddr.String())
+	return dial(ctx, network, tcpAddr.String())
 }
 
 // FindIPNet true if any of the ipnets contains ip
