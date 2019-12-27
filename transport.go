@@ -3,6 +3,7 @@
 package filtertransport
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"time"
@@ -11,12 +12,13 @@ import (
 // DefaultTransport http.DefaultTransport that filters using DefaultFilter
 var DefaultTransport = &http.Transport{
 	// does not include ProxyFromEnvironment, makes no sense for filter
-	Dial: func(network, addr string) (net.Conn, error) {
-		return FilterDial(network, addr, DefaultFilter, (&net.Dialer{
+	// DialContext will be used if Dial is nil
+	DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return FilterDial(ctx, network, addr, DefaultFilter, (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
 			DualStack: true,
-		}).Dial)
+		}).DialContext)
 	},
 	MaxIdleConns:          100,
 	IdleConnTimeout:       90 * time.Second,
