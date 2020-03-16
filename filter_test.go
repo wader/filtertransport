@@ -63,7 +63,7 @@ func TestFilterDial(t *testing.T) {
 		"tcp", "1.2.3.4:1234",
 		func(addr net.TCPAddr) error { return errors.New("") },
 		func(ctx context.Context, network string, address string) (net.Conn, error) {
-			t.Errorf("dail should not be called on filter error")
+			t.Errorf("dial should not be called on filter error")
 			return nil, nil
 		},
 	)
@@ -79,6 +79,6 @@ func TestFilterDial(t *testing.T) {
 		},
 	)
 	if !called {
-		t.Errorf("dail should be called on no filter error")
+		t.Errorf("dial should be called on no filter error")
 	}
 }
