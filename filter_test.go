@@ -40,7 +40,6 @@ func TestDefaultFilter(t *testing.T) {
 		{net.ParseIP("11.0.0.1"), false},
 
 		{net.ParseIP("::1"), true},
-		{net.ParseIP("::2"), true}, // IPv4 compatibility, not allowed for now
 
 		{net.ParseIP("::"), true},
 
@@ -48,6 +47,9 @@ func TestDefaultFilter(t *testing.T) {
 		{net.ParseIP("fc00::1"), true},
 		{net.ParseIP("fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), true},
 		{net.ParseIP("fe00::1"), false},
+
+		// make sure RFC 4291: IPv4-mapped Address is filtered
+		{net.ParseIP("::ffff:127.0.0.1"), true},
 	} {
 		if err := DefaultFilter(net.TCPAddr{IP: c.ip}); (err != nil) != c.fileterd {
 			t.Errorf("%v should be %t", c.ip, c.fileterd)
