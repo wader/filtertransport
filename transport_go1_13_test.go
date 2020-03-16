@@ -30,3 +30,13 @@ func TestDefaultTransportWithoutContext(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://127.0.0.1", nil)
 	testFilteredRequst(t, req)
 }
+
+func TestTLSDefaultTransportWithContext(t *testing.T) {
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", "https://127.0.0.1", nil)
+	testFilteredRequst(t, req)
+}
+
+func TestTLSDefaultTransportWithoutContext(t *testing.T) {
+	req, _ := http.NewRequest("GET", "https://127.0.0.1", nil)
+	testFilteredRequst(t, req)
+}
